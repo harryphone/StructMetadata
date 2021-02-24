@@ -7,6 +7,37 @@
 
 import Foundation
 
+protocol FlagSet {
+    associatedtype IntType : FixedWidthInteger
+    var Bits: IntType { get set }
+    
+    func lowMaskFor(_ BitWidth: Int) -> IntType
+
+    func maskFor(_ FirstBit: Int) -> IntType
+
+    func getFlag(_ Bit: Int) -> Bool
+
+    func getField(_ FirstBit: Int, _ BitWidth: Int) -> IntType
+}
+
+extension FlagSet {
+    func lowMaskFor(_ BitWidth: Int) -> IntType {
+        return IntType((1 << BitWidth) - 1)
+    }
+
+    func maskFor(_ FirstBit: Int) -> IntType {
+        return lowMaskFor(1) << FirstBit
+    }
+
+    func getFlag(_ Bit: Int) -> Bool {
+        return ((Bits & maskFor(Bit)) != 0)
+    }
+
+    func getField(_ FirstBit: Int, _ BitWidth: Int) -> IntType {
+        return IntType((Bits >> FirstBit) & lowMaskFor(BitWidth));
+    }
+}
+
 //以下内容仅供参考
 extension StructMetadata {
     mutating func getTrailingFlags() -> UnsafeMutablePointer<MetadataTrailingFlags>? {
@@ -32,7 +63,7 @@ extension StructMetadata {
         }
     }
     
-    struct MetadataTrailingFlags {
+    struct MetadataTrailingFlags: FlagSet {
         
         enum Specialization: Int {
             /// Whether this metadata is a specializaxtion of a generic metadata pattern
@@ -47,22 +78,6 @@ extension StructMetadata {
         
         typealias IntType = UInt64
         var Bits: IntType
-        
-        func lowMaskFor(_ BitWidth: Int) -> IntType {
-            return IntType((1 << BitWidth) - 1)
-        }
-        
-        func maskFor(_ FirstBit: Int) -> IntType {
-            return lowMaskFor(1) << FirstBit
-        }
-        
-        func getFlag(_ Bit: Int) -> Bool {
-            return ((Bits & maskFor(Bit)) != 0)
-        }
-        
-        func getField(_ FirstBit: Int, _ BitWidth: Int) -> IntType {
-            return IntType((Bits >> FirstBit) & lowMaskFor(BitWidth));
-        }
         
     }
 }
@@ -102,7 +117,7 @@ struct TargetGenericMetadataInstantiationCache {
     var PrivateData: UnsafePointer<UnsafeRawPointer>
 }
 
-struct GenericMetadataPatternFlags {
+struct GenericMetadataPatternFlags: FlagSet {
     
     enum Pattern: Int {
         // All of these values are bit offsets or widths.
@@ -130,24 +145,6 @@ struct GenericMetadataPatternFlags {
     
     typealias IntType = UInt32
     var Bits: IntType
-    
-    func lowMaskFor(_ BitWidth: Int) -> IntType {
-        return IntType((1 << BitWidth) - 1)
-    }
-    
-    func maskFor(_ FirstBit: Int) -> IntType {
-        return lowMaskFor(1) << FirstBit
-    }
-    
-    func getFlag(_ Bit: Int) -> Bool {
-        return ((Bits & maskFor(Bit)) != 0)
-    }
-    
-    func getField(_ FirstBit: Int, _ BitWidth: Int) -> IntType {
-        return IntType((Bits >> FirstBit) & lowMaskFor(BitWidth));
-    }
-    
-    
 }
 
 struct Metadata {
